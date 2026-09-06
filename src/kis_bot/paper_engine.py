@@ -12,6 +12,7 @@ from .strategy import Features, momentum_pullback_entry, entry_score
 class Tick:
     symbol: str; price: float; minute: int; features: Features
     safety: SafetySnapshot; stop: float; vwap: float | None = None
+    session: str = 'MAIN'
 
 class PaperEngine:
     def __init__(self, broker: Broker, journal: TradeJournal, equity: float = 1_500_000,
@@ -30,7 +31,9 @@ class PaperEngine:
                                  momentum_alive=momentum_pullback_entry(tick.features, 0), max_minutes=60)
             if reason: self._close(tick, reason)
             return reason or 'MANAGING'
-        if not trade_allowed(tick.safety) or not momentum_pullback_entry(tick.features): return 'NO_TRADE'
+        from .context import session_policy
+        threshold, min_turnover = session_policy(tick.session)
+        if tick.safety.avg_turnover < min_turnover or not trade_allowed(tick.safety) or not momentum_pullback_entry(tick.features, threshold): return 'NO_TRADE'
         sizing = size_position(self.equity, tick.price, tick.stop, self.equity * .60, cash=self.equity)
         if sizing.quantity <= 0: return 'NO_TRADE'
         target = tick.price + (tick.price - tick.stop) * self.reward_risk

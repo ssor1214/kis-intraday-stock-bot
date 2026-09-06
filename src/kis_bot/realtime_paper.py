@@ -3,6 +3,8 @@ from .broker import MockBroker
 from .journal import TradeJournal
 from .market_features import MarketObservation, parse_pipe_message, to_strategy_inputs
 from .paper_engine import PaperEngine, Tick
+from .context import session_at
+from datetime import datetime
 
 @dataclass
 class RealtimePaperRouter:
@@ -24,5 +26,5 @@ class RealtimePaperRouter:
         features, safety = to_strategy_inputs(obs, self.previous.get(obs.symbol))
         self.previous[obs.symbol] = obs.price
         self.minute += 1
-        result = self.engines[obs.symbol].on_tick(Tick(obs.symbol, obs.price, self.minute, features, safety, obs.price * .99, obs.price))
+        result = self.engines[obs.symbol].on_tick(Tick(obs.symbol, obs.price, self.minute, features, safety, obs.price * .99, obs.price, session_at(datetime.now().time())))
         self.events.append((obs.symbol, result))
