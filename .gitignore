@@ -4,5 +4,6 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 data/*.json
+data/*.csv
 logs/
 *.egg-info/

@@ -11,4 +11,3 @@ def expected_net_positive(entry: float, expected_exit: float, quantity: int,
                           slippage_rate: float) -> bool:
     return net_pnl(entry, expected_exit, quantity, commission_rate,
                    sell_tax_rate, slippage_rate) > 0
-

@@ -22,4 +22,3 @@ class LiveBroker:
     """Placeholder: live adapter must be implemented and separately enabled."""
     def submit(self, order: Order) -> str:
         raise RuntimeError("live order adapter is intentionally locked")
-

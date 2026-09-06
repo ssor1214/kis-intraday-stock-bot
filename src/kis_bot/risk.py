@@ -22,4 +22,3 @@ def size_position(equity: float, entry: float, stop: float, target_value: float,
 
 def can_trade(daily_net_pnl: float, equity: float, max_daily_loss: float = .01) -> bool:
     return daily_net_pnl > -(equity * max_daily_loss)
-

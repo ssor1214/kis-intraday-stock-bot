@@ -8,4 +8,3 @@ def test_position_size_respects_risk_and_capital():
 def test_daily_kill_switch():
     assert not can_trade(-15_000, 1_500_000)
     assert can_trade(-14_999, 1_500_000)
-
