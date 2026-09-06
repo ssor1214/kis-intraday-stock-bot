@@ -33,6 +33,8 @@ class PaperEngine:
             return reason or 'MANAGING'
         from .context import session_policy
         threshold, min_turnover = session_policy(tick.session)
+        # Optional flow/news data may be delayed intraday; permit a bounded 15-point relaxation.
+        threshold -= 15 if 0 < tick.features.data_quality < 1 else 0
         if tick.safety.avg_turnover < min_turnover or not trade_allowed(tick.safety) or not momentum_pullback_entry(tick.features, threshold): return 'NO_TRADE'
         sizing = size_position(self.equity, tick.price, tick.stop, self.equity * .60, cash=self.equity)
         if sizing.quantity <= 0: return 'NO_TRADE'
