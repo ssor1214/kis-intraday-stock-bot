@@ -14,7 +14,10 @@ class RealtimePaperRouter:
 
     def __post_init__(self):
         journal = TradeJournal(self.journal_path)
-        self.engines = {s: PaperEngine(self.broker, journal) for s in self.symbols}
+        from .config import Settings
+        settings = Settings()
+        self.account = __import__('kis_bot.account_guard', fromlist=['ExposureManager']).ExposureManager(settings.strategy_capital)
+        self.engines = {s: PaperEngine(self.broker, journal, equity=settings.strategy_capital, exposure=self.account) for s in self.symbols}
         self.previous: dict[str, float] = {}
         self.minute = 0
         self.events: list[tuple[str, str]] = []

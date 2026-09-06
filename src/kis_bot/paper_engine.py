@@ -17,15 +17,18 @@ class Tick:
 class PaperEngine:
     def __init__(self, broker: Broker, journal: TradeJournal, equity: float = 1_500_000,
                  commission_rate: float = .00015, tax_rate: float = .002,
-                 slippage_rate: float = .0005, reward_risk: float = 1.5):
+                 slippage_rate: float = .0005, reward_risk: float = 1.5, exposure=None):
         self.broker, self.journal, self.equity = broker, journal, equity
         self.commission_rate, self.tax_rate, self.slippage_rate = commission_rate, tax_rate, slippage_rate
         self.reward_risk = reward_risk
+        self.exposure = exposure
+        self.daily_net_pnl = 0.0
         self.position: Position | None = None
         self.entry_tick: Tick | None = None
         self.order_id: str | None = None
 
     def on_tick(self, tick: Tick) -> str:
+        if self.daily_net_pnl <= -(self.equity * .01): return 'NO_TRADE_KILL_SWITCH'
         if self.position:
             reason = exit_reason(self.position, tick.price, tick.minute, tick.vwap,
                                  momentum_alive=momentum_pullback_entry(tick.features, 0), max_minutes=60)
@@ -38,11 +41,14 @@ class PaperEngine:
         if tick.safety.avg_turnover < min_turnover or not trade_allowed(tick.safety) or not momentum_pullback_entry(tick.features, threshold): return 'NO_TRADE'
         sizing = size_position(self.equity, tick.price, tick.stop, self.equity * .60, cash=self.equity)
         if sizing.quantity <= 0: return 'NO_TRADE'
+        value = sizing.quantity * tick.price
+        if self.exposure and not self.exposure.can_open(tick.symbol, value): return 'NO_TRADE_EXPOSURE'
         target = tick.price + (tick.price - tick.stop) * self.reward_risk
         if not expected_net_positive(tick.price, target, sizing.quantity,
                                      self.commission_rate, self.tax_rate, self.slippage_rate):
             return 'COST_FILTER'
         self.order_id = self.broker.submit(Order(tick.symbol, 'BUY', sizing.quantity, tick.price))
+        if self.exposure: self.exposure.reserve(tick.symbol, value)
         self.position = Position(tick.price, tick.stop, sizing.quantity, tick.minute)
         self.entry_tick = tick
         return 'POSITION_OPEN'
@@ -59,4 +65,6 @@ class PaperEngine:
             gross_pnl=gross, net_pnl=net, holding_minutes=tick.minute-self.position.opened_minute,
             entry_score=entry_score(self.entry_tick.features)))
         self.equity += net
+        self.daily_net_pnl += net
+        if self.exposure: self.exposure.release(tick.symbol, self.position.quantity * self.position.entry, self.position.quantity * tick.price)
         self.position = None; self.entry_tick = None
