@@ -12,10 +12,11 @@ from kis_bot.realtime_paper import RealtimePaperRouter
 def main():
     settings = Settings(); settings.validate()
     symbols = [x.strip() for x in os.getenv('PAPER_SYMBOLS', '005930').split(',') if x.strip()]
-    start = clock_time(8, 30)
+    # Connect ten minutes before PRE so authentication/subscriptions are ready.
+    start = clock_time(8, 20)
     while datetime.now().time() < start:
         remaining = int((datetime.combine(datetime.today(), start) - datetime.now()).total_seconds())
-        print(f'waiting for paper session start 08:30 KST ({max(0, remaining)}s)', flush=True)
+        print(f'waiting for paper session start 08:20 KST ({max(0, remaining)}s)', flush=True)
         time.sleep(min(30, max(1, remaining)))
     router = RealtimePaperRouter(symbols)
     stream = KisMarketStream(settings, symbols, router.on_message, timeout=2)
