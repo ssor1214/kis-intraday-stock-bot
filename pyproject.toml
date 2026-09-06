@@ -1,0 +1,12 @@
+[project]
+name = "kis-intraday-stock-bot"
+version = "0.2.0"
+requires-python = ">=3.11"
+dependencies = ["python-dotenv>=1.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
